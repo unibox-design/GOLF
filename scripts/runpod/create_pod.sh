@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/runpod/create_pod.sh --env-file FILE [--dry-run]
+
+Options:
+  --env-file   Shell env file with Runpod and experiment settings
+  --dry-run    Print the rendered runpodctl command without executing it
+EOF
+}
+
+ENV_FILE=""
+DRY_RUN=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env-file) ENV_FILE="$2"; shift 2 ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage; exit 1 ;;
+  esac
+done
+
+if [[ -z "$ENV_FILE" || ! -f "$ENV_FILE" ]]; then
+  echo "Env file not found: $ENV_FILE" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+
+required_vars=(
+  RUNPOD_API_KEY
+  RUNPOD_IMAGE_NAME
+  POD_NAME
+  GPU_TYPE
+  GPU_COUNT
+  CONTAINER_DISK_GB
+  VOLUME_GB
+  RUN_PRESET
+  DATA_VARIANT
+  TRAIN_SHARDS
+  RESULTS_DIR
+)
+
+for var_name in "${required_vars[@]}"; do
+  if [[ -z "${!var_name:-}" ]]; then
+    echo "Missing required variable: $var_name" >&2
+    exit 1
+  fi
+done
+
+STARTUP_COMMAND="$(
+  python3 scripts/runpod/render_startup_command.py \
+    --run-preset "$RUN_PRESET" \
+    --data-variant "$DATA_VARIANT" \
+    --train-shards "$TRAIN_SHARDS" \
+    --results-dir "$RESULTS_DIR"
+)"
+STARTUP_COMMAND_QUOTED="$(
+  python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$STARTUP_COMMAND"
+)"
+
+SECURE_FLAG=()
+if [[ "${SECURE_CLOUD:-false}" == "true" ]]; then
+  SECURE_FLAG+=(--secureCloud)
+fi
+
+CMD=(
+  runpodctl create pod
+  --name "$POD_NAME"
+  --gpuType "$GPU_TYPE"
+  --gpuCount "$GPU_COUNT"
+  --imageName "$RUNPOD_IMAGE_NAME"
+  --containerDiskSize "$CONTAINER_DISK_GB"
+  --volumeSize "$VOLUME_GB"
+  --args "bash -lc $STARTUP_COMMAND_QUOTED"
+)
+
+if [[ ${#SECURE_FLAG[@]} -gt 0 ]]; then
+  CMD+=("${SECURE_FLAG[@]}")
+fi
+
+if [[ -n "${EXTRA_POD_FLAGS:-}" ]]; then
+  # shellcheck disable=SC2206
+  EXTRA_FLAGS=( $EXTRA_POD_FLAGS )
+  CMD+=("${EXTRA_FLAGS[@]}")
+fi
+
+printf 'Rendered startup command:\n%s\n\n' "$STARTUP_COMMAND"
+printf 'Runpod command:'
+printf ' %q' "${CMD[@]}"
+printf '\n'
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  exit 0
+fi
+
+printf 'Configuring runpodctl with provided API key\n'
+runpodctl config --apiKey "$RUNPOD_API_KEY"
+
+"${CMD[@]}"

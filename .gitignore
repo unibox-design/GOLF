@@ -1,0 +1,4 @@
+parameter-golf/
+logs/
+config/runpod.env
+.DS_Store

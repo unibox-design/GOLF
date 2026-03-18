@@ -1,0 +1,22 @@
+services:
+  manager:
+    build:
+      context: .
+      dockerfile: docker/manager.Dockerfile
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    tty: true
+    stdin_open: true
+
+  trainer:
+    build:
+      context: .
+      dockerfile: docker/trainer.Dockerfile
+      args:
+        TRAINER_BASE_IMAGE: ${TRAINER_BASE_IMAGE:-python:3.12-slim}
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    tty: true
+    stdin_open: true

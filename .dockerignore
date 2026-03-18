@@ -1,0 +1,12 @@
+.git
+.venv
+logs
+experiments.csv
+examples
+parameter-golf/.git
+parameter-golf/.venv
+parameter-golf/data/datasets
+parameter-golf/runs
+parameter-golf/records
+__pycache__
+*.pyc

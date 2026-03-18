@@ -1,0 +1,49 @@
+{
+  "baseline": {
+    "description": "Single-GPU baseline with the public sp1024 setup",
+    "env": {
+      "RUN_ID": "baseline_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "VAL_LOSS_EVERY": "200"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
+  "kv2": {
+    "description": "Baseline with fewer KV heads",
+    "env": {
+      "RUN_ID": "kv2_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "NUM_KV_HEADS": "2",
+      "VAL_LOSS_EVERY": "200"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
+  "mlx_smoke": {
+    "description": "Apple Silicon smoke run with a short MLX training job",
+    "env": {
+      "RUN_ID": "mlx_smoke",
+      "ITERATIONS": "200",
+      "TRAIN_BATCH_TOKENS": "8192",
+      "VAL_LOSS_EVERY": "0",
+      "VAL_BATCH_SIZE": "8192"
+    },
+    "command": [
+      "python3",
+      "train_gpt_mlx.py"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+step 200 train_loss:2.3841
+step 400 train_loss:2.2012
+final_int8_zlib_roundtrip val_loss:2.0727 val_bpb:1.22436570
+Serialized model int8+zlib: 15815847
+Code size: 47642
+Total submission size int8+zlib: 15863489
