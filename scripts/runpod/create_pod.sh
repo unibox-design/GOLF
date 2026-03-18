@@ -34,10 +34,7 @@ source "$ENV_FILE"
 
 required_vars=(
   RUNPOD_API_KEY
-  RUNPOD_IMAGE_NAME
   POD_NAME
-  GPU_TYPE
-  GPU_COUNT
   CONTAINER_DISK_GB
   VOLUME_GB
   RUN_PRESET
@@ -52,6 +49,13 @@ for var_name in "${required_vars[@]}"; do
     exit 1
   fi
 done
+
+if [[ -z "${TEMPLATE_ID:-}" ]]; then
+  if [[ -z "${RUNPOD_IMAGE_NAME:-}" || -z "${GPU_TYPE:-}" || -z "${GPU_COUNT:-}" ]]; then
+    echo "When TEMPLATE_ID is empty, RUNPOD_IMAGE_NAME, GPU_TYPE, and GPU_COUNT are required." >&2
+    exit 1
+  fi
+fi
 
 STARTUP_COMMAND="$(
   python3 scripts/runpod/render_startup_command.py \
@@ -72,13 +76,35 @@ fi
 CMD=(
   runpodctl create pod
   --name "$POD_NAME"
-  --gpuType "$GPU_TYPE"
-  --gpuCount "$GPU_COUNT"
-  --imageName "$RUNPOD_IMAGE_NAME"
   --containerDiskSize "$CONTAINER_DISK_GB"
   --volumeSize "$VOLUME_GB"
+  --volumePath "${VOLUME_PATH:-/workspace}"
   --args "bash -lc $STARTUP_COMMAND_QUOTED"
 )
+
+if [[ -n "${TEMPLATE_ID:-}" ]]; then
+  CMD+=(--templateId "$TEMPLATE_ID")
+else
+  CMD+=(--gpuType "$GPU_TYPE" --gpuCount "$GPU_COUNT" --imageName "$RUNPOD_IMAGE_NAME")
+fi
+
+if [[ -n "${MIN_VCPU:-}" ]]; then
+  CMD+=(--vcpu "$MIN_VCPU")
+fi
+
+if [[ -n "${MIN_MEM_GB:-}" ]]; then
+  CMD+=(--mem "$MIN_MEM_GB")
+fi
+
+if [[ -n "${MAX_COST_PER_HOUR:-}" ]]; then
+  CMD+=(--cost "$MAX_COST_PER_HOUR")
+fi
+
+if [[ -n "${PORTS:-}" ]]; then
+  for port in ${PORTS}; do
+    CMD+=(--ports "$port")
+  done
+fi
 
 if [[ ${#SECURE_FLAG[@]} -gt 0 ]]; then
   CMD+=("${SECURE_FLAG[@]}")

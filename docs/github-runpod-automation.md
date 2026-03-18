@@ -36,6 +36,8 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 - `.github/workflows/build-runpod-image.yml`
 - `docker/runpod.Dockerfile`
 - `config/runpod.env.example`
+- `config/runpod.dev-4090.env`
+- `config/runpod.baseline-h100.env`
 - `scripts/runpod/create_pod.sh`
 - `scripts/runpod/render_startup_command.py`
 
@@ -50,6 +52,8 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
    - `RUNPOD_IMAGE_NAME`
    - your preferred GPU settings
    - quote any env values that contain spaces, such as `GPU_TYPE="NVIDIA H100 PCIe"`
+   - start with `config/runpod.dev-4090.env` for cheaper validation runs
+   - move to `config/runpod.baseline-h100.env` only after the flow is stable
 6. Run:
 
 ```bash
@@ -70,11 +74,16 @@ The pod starts from the published Docker image and runs one shell command. That 
 2. launches the named preset through `scripts/launch_run.sh`
 3. parses the resulting log into `experiments.csv`
 
-Logs and CSV output are written into `/workspace/results` inside the pod.
-Logs and CSV output are written into `/runpod/results` by default so they land on the persistent volume path that Runpod mounts automatically.
+Logs and CSV output are written into `/workspace/results` by default, matching the configured volume path in the pod preset.
 
 ## Notes
 
 - This is intentionally a first-pass automation path.
 - Result export back to GitHub can be added later as a second step.
-- For real GPU runs, use a CUDA-capable base image in `docker/runpod.Dockerfile` via the workflow input.
+- The default GPU base image is `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`.
+- `runpodctl create pod` supports `--templateId`, but reusable Pod templates are not created by this CLI flow. The `.env` files in `config/` are the reusable launch presets for now.
+- Current Runpod pricing from `runpodctl get cloud` on March 19, 2026 shows roughly:
+  - `1x RTX 4090`: `$0.20/hr` spot, `$0.34/hr` on-demand
+  - `1x A40`: `$0.24/hr` spot, `$0.35/hr` on-demand
+  - `1x H100 80GB HBM3`: `$1.50/hr` spot, `$2.69/hr` on-demand
+- For first runs, `1x RTX 4090` is the best cost/performance default in this list.

@@ -3,6 +3,7 @@
 logs
 experiments.csv
 examples
+config/runpod.env
 parameter-golf/.git
 parameter-golf/.venv
 parameter-golf/data/datasets

@@ -27,6 +27,8 @@ The launcher works best when the scripts are copied into the same machine where 
 - `docs/github-runpod-automation.md`: GitHub image build plus Runpod launch workflow
 - `config/runs.example.json`: example run presets
 - `config/runpod.env.example`: template for Runpod automation settings
+- `config/runpod.dev-4090.env`: reusable low-cost Runpod preset
+- `config/runpod.baseline-h100.env`: reusable `1xH100` Runpod preset
 - `experiments.csv`: experiment ledger
 - `scripts/launch_run.sh`: launches a configured run and records metadata
 - `scripts/docker_launch.sh`: runs the launcher inside the trainer container

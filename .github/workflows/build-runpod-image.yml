@@ -10,7 +10,7 @@ on:
       runpod_base_image:
         description: Base image for docker/runpod.Dockerfile
         required: true
-        default: python:3.12-slim
+        default: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
   push:
     branches:
       - main
@@ -41,7 +41,7 @@ jobs:
             echo "base=${{ github.event.inputs.runpod_base_image }}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-            echo "base=python:3.12-slim" >> "$GITHUB_OUTPUT"
+            echo "base=runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404" >> "$GITHUB_OUTPUT"
           fi
           echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER}/golf-runpod" >> "$GITHUB_OUTPUT"
 
