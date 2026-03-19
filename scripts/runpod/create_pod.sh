@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/runpod/create_pod.sh --env-file FILE [--dry-run]
+  scripts/runpod/create_pod.sh --env-file FILE [--dry-run] [--mode MODE]
 
 Options:
   --env-file   Shell env file with Runpod and experiment settings
   --dry-run    Print the rendered runpodctl command without executing it
+  --mode       bootstrap or idle (default: bootstrap)
 EOF
 }
 
 ENV_FILE=""
 DRY_RUN=0
+MODE="bootstrap"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env-file) ENV_FILE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --mode) MODE="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage; exit 1 ;;
   esac
@@ -58,11 +64,12 @@ if [[ -z "${TEMPLATE_ID:-}" ]]; then
 fi
 
 STARTUP_COMMAND="$(
-  python3 scripts/runpod/render_startup_command.py \
+  python3 "$REPO_ROOT/scripts/runpod/render_startup_command.py" \
     --run-preset "$RUN_PRESET" \
     --data-variant "$DATA_VARIANT" \
     --train-shards "$TRAIN_SHARDS" \
-    --results-dir "$RESULTS_DIR"
+    --results-dir "$RESULTS_DIR" \
+    --mode "$MODE"
 )"
 STARTUP_COMMAND_QUOTED="$(
   python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$STARTUP_COMMAND"
@@ -79,7 +86,7 @@ CMD=(
   --containerDiskSize "$CONTAINER_DISK_GB"
   --volumeSize "$VOLUME_GB"
   --volumePath "${VOLUME_PATH:-/workspace}"
-  --args "bash -lc $STARTUP_COMMAND_QUOTED"
+  --args "$STARTUP_COMMAND"
 )
 
 if [[ -n "${TEMPLATE_ID:-}" ]]; then
@@ -126,7 +133,11 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0
 fi
 
-printf 'Configuring runpodctl with provided API key\n'
-runpodctl config --apiKey "$RUNPOD_API_KEY"
+if [[ -z "${RUNPOD_SKIP_CONFIGURE:-}" ]]; then
+  printf 'Configuring runpodctl with provided API key\n'
+  runpodctl config --apiKey "$RUNPOD_API_KEY"
+else
+  printf 'Skipping runpodctl reconfiguration; using existing local CLI auth.\n'
+fi
 
 "${CMD[@]}"

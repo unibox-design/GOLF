@@ -15,19 +15,30 @@ def main() -> int:
     parser.add_argument("--data-variant", required=True)
     parser.add_argument("--train-shards", required=True)
     parser.add_argument("--results-dir", required=True)
+    parser.add_argument(
+        "--mode",
+        choices=["bootstrap", "idle"],
+        default="bootstrap",
+        help="bootstrap runs the automation flow; idle keeps the container alive for manual debugging",
+    )
     args = parser.parse_args()
 
     log_path = f"{args.results_dir}/{args.run_preset}.log"
+    if args.mode == "idle":
+        print("/bin/bash -lc 'mkdir -p /runpod/results && echo idle > /runpod/results/bootstrap.status && exec sleep infinity'")
+        return 0
+
     command = (
-        f"export RUN_PRESET={q(args.run_preset)} "
+        f"/usr/bin/env "
+        f"RUN_PRESET={q(args.run_preset)} "
         f"DATA_VARIANT={q(args.data_variant)} "
         f"TRAIN_SHARDS={q(args.train_shards)} "
         f"RESULTS_DIR={q(args.results_dir)} "
         f"RUN_LOG_PATH={q(log_path)} "
         f"REPO_ROOT=/runpod/parameter-golf "
         f"AUTOMATION_ROOT=/opt/golf "
-        f"KEEP_ALIVE_ON_EXIT=1; "
-        f"bash /opt/golf/scripts/runpod/bootstrap.sh"
+        f"KEEP_ALIVE_ON_EXIT=1 "
+        f"/bin/bash /opt/golf/scripts/runpod/bootstrap.sh"
     )
 
     print(command)
