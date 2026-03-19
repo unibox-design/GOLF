@@ -159,3 +159,19 @@ Important files inside the pod:
 - Use `RTX 4090` for cheap smoke tests and pipeline validation.
 - Prefer disabling compile on dev GPUs.
 - Reserve the compiled path and more serious timing-sensitive tests for H100-class runs later.
+
+### Cost and persistence tradeoff
+
+- Persistent volume adds cost even when the pod is stopped.
+- GPU runtime usually dominates storage cost, so the first priority is to avoid leaving pods running idle.
+- For a casual experimentation workflow, the recommended balance is:
+  - use cheap GPUs like `RTX 4090`
+  - keep the persistent volume modest
+  - store only the useful durable assets:
+    - cloned repo
+    - dataset cache
+    - logs
+    - results CSV
+- Large long-lived volumes and always-on pods are unnecessary for this project stage.
+- If you only do a few runs, recreating more state each time may be cheaper than carrying a large volume.
+- If you iterate repeatedly, a small persistent volume is usually worth it because it avoids repeated clone/install/download work.
