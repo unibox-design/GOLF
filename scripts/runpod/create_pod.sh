@@ -120,6 +120,7 @@ printf 'Rendered startup command:\n%s\n\n' "$STARTUP_COMMAND"
 printf 'Runpod command:'
 printf ' %q' "${CMD[@]}"
 printf '\n'
+printf 'SSH note: if Runpod generates an RSA keypair, macOS OpenSSH may require `-o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa`.\n'
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0

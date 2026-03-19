@@ -34,6 +34,7 @@ The launcher works best when the scripts are copied into the same machine where 
 - `scripts/docker_launch.sh`: runs the launcher inside the trainer container
 - `scripts/runpod/create_pod.sh`: creates a Runpod pod from a published image
 - `scripts/runpod/render_startup_command.py`: renders the pod startup command
+- `scripts/runpod/bootstrap.sh`: bootstraps repo/deps/data on the pod itself
 - `scripts/parse_log.py`: extracts final metrics from a training log
 - `scripts/summarize_results.py`: prints a compact summary from `experiments.csv`
 - `docker/manager.Dockerfile`: lightweight image for parser and summary tasks
