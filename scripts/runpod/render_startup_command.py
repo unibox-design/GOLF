@@ -19,9 +19,12 @@ def main() -> int:
 
     log_path = f"{args.results_dir}/{args.run_preset}.log"
     csv_path = f"{args.results_dir}/experiments.csv"
+    bootstrap_log = f"{args.results_dir}/bootstrap.log"
+    status_file = f"{args.results_dir}/bootstrap.status"
 
     command = (
         f"mkdir -p {q(args.results_dir)} && "
+        f"("
         f"cd /workspace/golf/parameter-golf && "
         f"python3 data/cached_challenge_fineweb.py --variant {q(args.data_variant)} "
         f"--train-shards {q(args.train_shards)} && "
@@ -31,6 +34,10 @@ def main() -> int:
         f"--results {q(csv_path)} --log-path {q(log_path)} && "
         f"python3 scripts/parse_log.py --log {q(log_path)} --run-id {q(args.run_preset)} "
         f"--preset {q(args.run_preset)} --append {q(csv_path)}"
+        f") > >(tee -a {q(bootstrap_log)}) 2>&1; rc=$?; "
+        f"echo $rc > {q(status_file)}; "
+        f"echo \"bootstrap_exit_code=$rc\" | tee -a {q(bootstrap_log)}; "
+        f"tail -f /dev/null"
     )
 
     print(command)
