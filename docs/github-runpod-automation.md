@@ -43,6 +43,8 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 - `scripts/runpod/create_pod.sh`
 - `scripts/runpod/render_startup_command.py`
 - `scripts/runpod/bootstrap.sh`
+- `scripts/runpod/ssh_command.sh`
+- `scripts/runpod/remote_exec.sh`
 
 ## First-Time Setup
 
@@ -60,13 +62,31 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 6. Run:
 
 ```bash
-bash scripts/runpod/create_pod.sh --env-file config/runpod.env --dry-run
+bash scripts/runpod/create_pod.sh --env-file config/runpod.env --mode bootstrap --dry-run
 ```
 
 Then launch the real pod:
 
 ```bash
-bash scripts/runpod/create_pod.sh --env-file config/runpod.env
+bash scripts/runpod/create_pod.sh --env-file config/runpod.env --mode bootstrap
+```
+
+For a debug pod that only stays alive for SSH/manual inspection:
+
+```bash
+bash scripts/runpod/create_pod.sh --env-file config/runpod.dev-4090.env --mode idle
+```
+
+To resolve the exact SSH command for a pod:
+
+```bash
+bash scripts/runpod/ssh_command.sh <pod-id>
+```
+
+To run a remote command through the resolved SSH path:
+
+```bash
+bash scripts/runpod/remote_exec.sh <pod-id> -- cat /runpod/results/bootstrap.status
 ```
 
 ## What the Pod Does
@@ -94,6 +114,7 @@ Important files inside the pod:
 - Result export back to GitHub can be added later as a second step.
 - The default GPU base image is `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`.
 - The image is intentionally thin. Heavy repo clone, dependency install, and dataset setup happen on the pod volume instead of during GitHub image build.
+- `--mode idle` is the recommended first debug step whenever pod startup behavior is unclear.
 - `runpodctl create pod` supports `--templateId`, but reusable Pod templates are not created by this CLI flow. The `.env` files in `config/` are the reusable launch presets for now.
 - Current Runpod pricing from `runpodctl get cloud` on March 19, 2026 shows roughly:
   - `1x RTX 4090`: `$0.20/hr` spot, `$0.34/hr` on-demand
@@ -102,3 +123,39 @@ Important files inside the pod:
 - For first runs, `1x RTX 4090` is the best cost/performance default in this list.
 - Some Runpod-managed SSH keys are RSA. On recent macOS OpenSSH builds, you may need:
   - `-o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa`
+
+## Lessons Learned
+
+### Image and startup model
+
+- A thin image is better than a fully prepared image for this workflow.
+- Keep only the automation code in the published image.
+- Clone `parameter-golf`, install Python requirements, and download data on the Runpod volume during bootstrap.
+- Mount the persistent volume at `/runpod`, not over the image path, so `/opt/golf` stays intact.
+- When pod startup behavior is unclear, use `--mode idle` first and verify SSH/container stability before running bootstrap.
+
+### SSH behavior on this machine
+
+- `runpodctl ssh connect` is the source of truth for the current pod endpoint.
+- Runpod-managed SSH keys may be RSA, and recent macOS OpenSSH defaults may reject them.
+- The working SSH shape on this machine may require:
+  - `-o PubkeyAcceptedAlgorithms=+ssh-rsa`
+  - `-o HostKeyAlgorithms=+ssh-rsa`
+- The helper scripts `scripts/runpod/ssh_command.sh` and `scripts/runpod/remote_exec.sh` exist to avoid re-solving this each time.
+
+### 4090 smoke-run behavior
+
+- On the `1x RTX 4090` dev pod, the baseline can fail under `torch.compile` with Triton/Inductor kernel generation errors.
+- The observed failure was:
+  - `No valid triton configs`
+  - `OutOfMemoryError: out of resource`
+- This was not a normal training-memory OOM. It was an Inductor/Triton codegen limitation on the dev GPU.
+- For cheap development runs, use:
+  - `TORCHDYNAMO_DISABLE=1`
+- With compile disabled, the baseline training loop did start and progressed successfully on the 4090.
+
+### Practical split
+
+- Use `RTX 4090` for cheap smoke tests and pipeline validation.
+- Prefer disabling compile on dev GPUs.
+- Reserve the compiled path and more serious timing-sensitive tests for H100-class runs later.

@@ -35,6 +35,8 @@ The launcher works best when the scripts are copied into the same machine where 
 - `scripts/runpod/create_pod.sh`: creates a Runpod pod from a published image
 - `scripts/runpod/render_startup_command.py`: renders the pod startup command
 - `scripts/runpod/bootstrap.sh`: bootstraps repo/deps/data on the pod itself
+- `scripts/runpod/ssh_command.sh`: prints the correct SSH command for a pod
+- `scripts/runpod/remote_exec.sh`: runs a command inside a pod through the resolved SSH path
 - `scripts/parse_log.py`: extracts final metrics from a training log
 - `scripts/summarize_results.py`: prints a compact summary from `experiments.csv`
 - `docker/manager.Dockerfile`: lightweight image for parser and summary tasks
@@ -101,6 +103,11 @@ The automated path is:
 4. let the pod download data and run the chosen preset automatically
 
 Guide: [docs/github-runpod-automation.md](/Users/proximity/Documents/Golf/docs/github-runpod-automation.md)
+
+That guide also records the practical lessons from the first real Runpod attempts:
+- thin image > heavy image
+- use `--mode idle` first when debugging pod startup
+- `TORCHDYNAMO_DISABLE=1` is useful on the `4090` dev pod because compiled Triton kernels failed there
 
 ## Next Step
 
