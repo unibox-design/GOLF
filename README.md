@@ -115,6 +115,8 @@ That guide also records the practical lessons from the first real Runpod attempt
 - the current best local dev result is `kv2_dev` at `final_int8_zlib_roundtrip_exact val_bpb=1.60084048`
 - pod creation against the pinned network volume is still manual/UI-backed in practice; experiment execution on an existing pod is now automated
 - keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance, with `10 GB` as the default dev target
+- public leaderboard takeaways now documented in [docs/experiment-manager.md](/Users/proximity/Documents/Golf/docs/experiment-manager.md), including the strongest currently visible ideas: sliding-window eval, quantization-aware export, lower LR, longer context, and deeper models
+- the volume-backed workflow is moving toward persistent `/workspace/venv` and package caches so repeat runs stop paying the heavy install cost on container disk
 
 ## Next Step
 

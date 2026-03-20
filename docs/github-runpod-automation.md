@@ -16,7 +16,7 @@ Automate the experiment loop with:
 4. The pod startup command:
    - clones this automation repo onto the Runpod volume if needed
    - clones `parameter-golf` onto the Runpod volume if needed
-   - installs Python dependencies onto the pod the first time
+   - creates a persistent virtualenv on the volume and installs Python dependencies there the first time
    - downloads the cached dataset shard
    - launches the configured experiment preset
    - parses the log into `experiments.csv`
@@ -113,7 +113,7 @@ bash scripts/runpod/run_existing_pod.sh <pod-id> --env-file config/runpod.env --
 The pod starts from the published Docker image and runs one shell command. That command:
 
 1. clones `parameter-golf` to `/runpod/parameter-golf` if it is not already present
-2. installs Python dependencies once and caches that state on the volume
+2. creates `/workspace/venv` if needed and installs Python dependencies there
 3. downloads `sp1024` cached data with the requested shard count
 4. launches the named preset through `scripts/launch_run.sh`
 5. parses the resulting log into `experiments.csv`
@@ -126,6 +126,9 @@ Important files inside the pod:
 - `/workspace/results/bootstrap.status`
 - `/workspace/results/<preset>.log`
 - `/workspace/results/experiments.csv`
+- `/workspace/venv`
+- `/workspace/.cache/pip`
+- `/workspace/.cache/huggingface`
 
 ## Region and persistent volume
 
@@ -201,7 +204,7 @@ The launcher will try those GPU types in order against the same pinned region an
 
 - A stock Runpod PyTorch image placed more reliably than the custom GHCR image when using a pinned network volume.
 - Clone both this automation repo and `parameter-golf` onto the mounted `/workspace` volume during bootstrap.
-- Keep runtime state on `/workspace` so future pods can reuse the same repo, data, and results.
+- Keep runtime state on `/workspace` so future pods can reuse the same repo, data, results, Python virtualenv, and package caches.
 - When pod startup behavior is unclear, use `--mode idle` first and verify container stability before running bootstrap.
 
 ### SSH behavior on this machine
