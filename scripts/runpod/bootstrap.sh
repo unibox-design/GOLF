@@ -5,8 +5,9 @@ RUN_PRESET="${RUN_PRESET:?RUN_PRESET is required}"
 DATA_VARIANT="${DATA_VARIANT:?DATA_VARIANT is required}"
 TRAIN_SHARDS="${TRAIN_SHARDS:?TRAIN_SHARDS is required}"
 RESULTS_DIR="${RESULTS_DIR:?RESULTS_DIR is required}"
-REPO_ROOT="${REPO_ROOT:-/runpod/parameter-golf}"
-AUTOMATION_ROOT="${AUTOMATION_ROOT:-/opt/golf}"
+WORKSPACE_ROOT="${WORKSPACE_ROOT:-/workspace}"
+REPO_ROOT="${REPO_ROOT:-$WORKSPACE_ROOT/parameter-golf}"
+AUTOMATION_ROOT="${AUTOMATION_ROOT:-$WORKSPACE_ROOT/golf}"
 PARAMETER_GOLF_REPO_URL="${PARAMETER_GOLF_REPO_URL:-https://github.com/openai/parameter-golf.git}"
 KEEP_ALIVE_ON_EXIT="${KEEP_ALIVE_ON_EXIT:-1}"
 
@@ -36,9 +37,29 @@ finish() {
 
 trap 'finish $?' EXIT
 
+log "workspace_root=$WORKSPACE_ROOT"
 log "automation_root=$AUTOMATION_ROOT"
 log "repo_root=$REPO_ROOT"
 log "results_dir=$RESULTS_DIR"
+
+torch_has_enable_gqa() {
+  python3 - <<'PY'
+import inspect
+import sys
+
+try:
+    import torch.nn.functional as F
+except Exception:
+    sys.exit(1)
+
+try:
+    sig = inspect.signature(F.scaled_dot_product_attention)
+except Exception:
+    sys.exit(1)
+
+sys.exit(0 if "enable_gqa" in sig.parameters else 1)
+PY
+}
 
 if [[ ! -d "$REPO_ROOT/.git" ]]; then
   log "cloning parameter-golf into $REPO_ROOT"
@@ -51,6 +72,12 @@ fi
 if [[ ! -f "$DEPS_STAMP" ]]; then
   log "installing Python dependencies"
   python3 -m pip install --upgrade pip 2>&1 | tee -a "$BOOTSTRAP_LOG"
+  if ! torch_has_enable_gqa; then
+    log "upgrading torch to a version with scaled_dot_product_attention(enable_gqa=...) support"
+    python3 -m pip install --upgrade "torch>=2.5" 2>&1 | tee -a "$BOOTSTRAP_LOG"
+  else
+    log "existing torch runtime already supports enable_gqa"
+  fi
   pip install -r "$REPO_ROOT/requirements.txt" 2>&1 | tee -a "$BOOTSTRAP_LOG"
   date '+%Y-%m-%d %H:%M:%S' > "$DEPS_STAMP"
 else

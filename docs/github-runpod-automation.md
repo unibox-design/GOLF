@@ -11,9 +11,10 @@ Automate the experiment loop with:
 ## Architecture
 
 1. Push code to GitHub.
-2. GitHub Actions builds a thin `docker/runpod.Dockerfile` image and pushes it to GHCR.
+2. GitHub Actions can still build a custom image, but the default launch path now prefers a stock Runpod PyTorch image because it placed more reliably with pinned network volumes.
 3. A local script uses `runpodctl` plus `config/runpod.env` to create a pod from that image.
 4. The pod startup command:
+   - clones this automation repo onto the Runpod volume if needed
    - clones `parameter-golf` onto the Runpod volume if needed
    - installs Python dependencies onto the pod the first time
    - downloads the cached dataset shard
@@ -36,7 +37,6 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 ## Files
 
 - `.github/workflows/build-runpod-image.yml`
-- `docker/runpod.Dockerfile`
 - `config/runpod.env.example`
 - `config/runpod.dev-4090.env`
 - `config/runpod.baseline-h100.env`
@@ -105,14 +105,14 @@ The pod starts from the published Docker image and runs one shell command. That 
 4. launches the named preset through `scripts/launch_run.sh`
 5. parses the resulting log into `experiments.csv`
 
-Logs and CSV output are written into `/runpod/results` by default.
+Logs and CSV output are written into `/workspace/results` by default.
 
 Important files inside the pod:
 
-- `/runpod/results/bootstrap.log`
-- `/runpod/results/bootstrap.status`
-- `/runpod/results/<preset>.log`
-- `/runpod/results/experiments.csv`
+- `/workspace/results/bootstrap.log`
+- `/workspace/results/bootstrap.status`
+- `/workspace/results/<preset>.log`
+- `/workspace/results/experiments.csv`
 
 ## Region and persistent volume
 
@@ -167,8 +167,8 @@ The launcher will try those GPU types in order against the same pinned region an
 
 - This is intentionally a first-pass automation path.
 - Result export back to GitHub can be added later as a second step.
-- The default GPU base image is `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`.
-- The image is intentionally thin. Heavy repo clone, dependency install, and dataset setup happen on the pod volume instead of during GitHub image build.
+- The default launch image is `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04`.
+- Heavy repo clone, dependency install, and dataset setup happen on the mounted `/workspace` volume instead of during image build.
 - `--mode idle` is the recommended first debug step whenever pod startup behavior is unclear.
 - `runpodctl create pod` supports `--templateId`, but reusable Pod templates are not created by this CLI flow. The `.env` files in `config/` are the reusable launch presets for now.
 - Current Runpod pricing from `runpodctl get cloud` on March 19, 2026 shows roughly:
@@ -186,11 +186,10 @@ The launcher will try those GPU types in order against the same pinned region an
 
 ### Image and startup model
 
-- A thin image is better than a fully prepared image for this workflow.
-- Keep only the automation code in the published image.
-- Clone `parameter-golf`, install Python requirements, and download data on the Runpod volume during bootstrap.
-- Mount the persistent volume at `/runpod`, not over the image path, so `/opt/golf` stays intact.
-- When pod startup behavior is unclear, use `--mode idle` first and verify SSH/container stability before running bootstrap.
+- A stock Runpod PyTorch image placed more reliably than the custom GHCR image when using a pinned network volume.
+- Clone both this automation repo and `parameter-golf` onto the mounted `/workspace` volume during bootstrap.
+- Keep runtime state on `/workspace` so future pods can reuse the same repo, data, and results.
+- When pod startup behavior is unclear, use `--mode idle` first and verify container stability before running bootstrap.
 
 ### SSH behavior on this machine
 

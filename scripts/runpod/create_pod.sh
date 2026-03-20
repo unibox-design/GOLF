@@ -80,10 +80,11 @@ STARTUP_COMMAND="$(
     --data-variant "$DATA_VARIANT" \
     --train-shards "$TRAIN_SHARDS" \
     --results-dir "$RESULTS_DIR" \
+    --workspace-root "${WORKSPACE_ROOT:-/workspace}" \
+    --automation-root "${AUTOMATION_ROOT:-}" \
+    --repo-root "${REPO_ROOT_ON_POD:-}" \
+    --automation-repo-url "${AUTOMATION_REPO_URL:-https://github.com/unibox-design/GOLF.git}" \
     --mode "$MODE"
-)"
-STARTUP_COMMAND_QUOTED="$(
-  python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$STARTUP_COMMAND"
 )"
 
 SECURE_FLAG=()

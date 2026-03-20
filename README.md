@@ -105,7 +105,7 @@ The automated path is:
 Guide: [docs/github-runpod-automation.md](/Users/proximity/Documents/Golf/docs/github-runpod-automation.md)
 
 That guide also records the practical lessons from the first real Runpod attempts:
-- thin image > heavy image
+- stock Runpod PyTorch image plus `/workspace` persistence placed more reliably than the custom GHCR image
 - use `--mode idle` first when debugging pod startup
 - `TORCHDYNAMO_DISABLE=1` is useful on the `4090` dev pod because compiled Triton kernels failed there
 - the default `4090` path now uses the `baseline_dev` preset for that reason
