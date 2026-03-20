@@ -109,6 +109,7 @@ That guide also records the practical lessons from the first real Runpod attempt
 - use `--mode idle` first when debugging pod startup
 - `TORCHDYNAMO_DISABLE=1` is useful on the `4090` dev pod because compiled Triton kernels failed there
 - the default `4090` path now uses the `baseline_dev` preset for that reason
+- if `4090` capacity is unavailable in the pinned region, let the launcher try a fallback candidate list under your cost cap
 - keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance, with `10 GB` as the default dev target
 
 ## Next Step

@@ -57,8 +57,13 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
    - `RUNPOD_API_KEY`
    - `RUNPOD_IMAGE_NAME`
    - your preferred GPU settings
+   - optionally pin `DATA_CENTER_ID`
+   - optionally attach `NETWORK_VOLUME_ID`
+   - set `GPU_CANDIDATES` to an ordered list if you want the launcher to try multiple GPU types automatically
+   - use `MAX_COST_PER_HOUR` to keep those attempts under your spending cap
    - quote any env values that contain spaces, such as `GPU_TYPE="NVIDIA H100 PCIe"`
    - start with `config/runpod.dev-4090.env` for cheaper validation runs
+   - if `4090` placement is unavailable in your pinned region, let `GPU_CANDIDATES` fall through to the next suitable option
    - move to `config/runpod.baseline-h100.env` only after the flow is stable
 6. Run:
 
@@ -109,6 +114,55 @@ Important files inside the pod:
 - `/runpod/results/<preset>.log`
 - `/runpod/results/experiments.csv`
 
+## Region and persistent volume
+
+`runpodctl create pod` supports both:
+
+- `--dataCenterId`
+- `--networkVolumeId`
+
+The current CLI does not expose volume creation/listing commands, so the practical setup is:
+
+1. create a network volume in the Runpod UI
+2. choose the datacenter explicitly
+3. copy the datacenter id and network volume id into the env file
+4. launch pods attached to that same volume
+
+Recommended approach:
+
+- pick one region for dev work and stay there
+- use a GPU type that is actually available in that region
+- reuse the same network volume across pods in that region
+- keep an ordered GPU candidate list ready so a capacity miss does not block your next test
+
+If you want an EU dev setup, use an EU datacenter only if your chosen GPU is actually offered there at the time you launch.
+
+Practical fallback set for this repo:
+
+1. `RTX 4090`
+2. `RTX 4080`
+3. `A40`
+4. `RTX PRO 4500`
+5. `RTX 5090`
+6. `RTX 2000 Ada`
+7. `RTX PRO 6000`
+8. `RTX PRO 6000 WK`
+9. `RTX 4000 Ada`
+10. `L4`
+
+They all use the same `baseline_dev` preset and the same mounted volume. The launcher tries them in order until one succeeds.
+
+Example:
+
+```env
+GPU_CANDIDATES="NVIDIA GeForce RTX 4090;NVIDIA GeForce RTX 4080;NVIDIA A40"
+MAX_COST_PER_HOUR=3
+DATA_CENTER_ID=EU-RO-1
+NETWORK_VOLUME_ID=your-volume-id
+```
+
+The launcher will try those GPU types in order against the same pinned region and volume until one succeeds. Expand that list if your region tends to surface different cards across the day.
+
 ## Notes
 
 - This is intentionally a first-pass automation path.
@@ -119,9 +173,12 @@ Important files inside the pod:
 - `runpodctl create pod` supports `--templateId`, but reusable Pod templates are not created by this CLI flow. The `.env` files in `config/` are the reusable launch presets for now.
 - Current Runpod pricing from `runpodctl get cloud` on March 19, 2026 shows roughly:
   - `1x RTX 4090`: `$0.20/hr` spot, `$0.34/hr` on-demand
+  - `1x RTX 4080`: `$0.17/hr` spot, `$0.28/hr` on-demand
   - `1x A40`: `$0.24/hr` spot, `$0.35/hr` on-demand
   - `1x H100 80GB HBM3`: `$1.50/hr` spot, `$2.69/hr` on-demand
-- For first runs, `1x RTX 4090` is the best cost/performance default in this list.
+- For first runs, `1x RTX 4090` is the best cost/performance default in this list when available.
+- `RTX 4080` and `A40` are the first fallback options for the same dev workflow.
+- A `MAX_COST_PER_HOUR` cap of `3` leaves headroom for all current dev options and a future single-H100 experiment.
 - Some Runpod-managed SSH keys are RSA. On recent macOS OpenSSH builds, you may need:
   - `-o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa`
 
