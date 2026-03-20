@@ -40,6 +40,7 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 - `config/runpod.env.example`
 - `config/runpod.dev-4090.env`
 - `config/runpod.baseline-h100.env`
+- `config/runs.example.json`
 - `scripts/runpod/create_pod.sh`
 - `scripts/runpod/render_startup_command.py`
 - `scripts/runpod/bootstrap.sh`
@@ -152,6 +153,9 @@ Important files inside the pod:
 - This was not a normal training-memory OOM. It was an Inductor/Triton codegen limitation on the dev GPU.
 - For cheap development runs, use:
   - `TORCHDYNAMO_DISABLE=1`
+- The repo now includes a dedicated `baseline_dev` preset for this path:
+  - set `RUN_PRESET=baseline_dev`
+  - `config/runpod.dev-4090.env` already points to it
 - With compile disabled, the baseline training loop did start and progressed successfully on the 4090.
 
 ### Practical split
@@ -166,7 +170,7 @@ Important files inside the pod:
 - GPU runtime usually dominates storage cost, so the first priority is to avoid leaving pods running idle.
 - For a casual experimentation workflow, the recommended balance is:
   - use cheap GPUs like `RTX 4090`
-  - keep the persistent volume modest
+  - keep the persistent volume modest, around `10 GB`
   - store only the useful durable assets:
     - cloned repo
     - dataset cache
@@ -175,3 +179,6 @@ Important files inside the pod:
 - Large long-lived volumes and always-on pods are unnecessary for this project stage.
 - If you only do a few runs, recreating more state each time may be cheaper than carrying a large volume.
 - If you iterate repeatedly, a small persistent volume is usually worth it because it avoids repeated clone/install/download work.
+- Suggested defaults:
+  - dev / `4090`: `10 GB`
+  - more serious / `H100`: `20 GB`

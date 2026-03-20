@@ -108,7 +108,8 @@ That guide also records the practical lessons from the first real Runpod attempt
 - thin image > heavy image
 - use `--mode idle` first when debugging pod startup
 - `TORCHDYNAMO_DISABLE=1` is useful on the `4090` dev pod because compiled Triton kernels failed there
-- keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance
+- the default `4090` path now uses the `baseline_dev` preset for that reason
+- keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance, with `10 GB` as the default dev target
 
 ## Next Step
 
