@@ -112,6 +112,8 @@ That guide also records the practical lessons from the first real Runpod attempt
 - the default `4090` path now uses the `baseline_dev` preset for that reason
 - if `4090` capacity is unavailable in the pinned region, let the launcher try a fallback candidate list under your cost cap
 - a completed manual-pod smoke run on March 20, 2026 reached `final_int8_zlib_roundtrip_exact val_bpb=1.61206716` with total compressed submission size `9045206`
+- the current best local dev result is `kv2_dev` at `final_int8_zlib_roundtrip_exact val_bpb=1.60084048`
+- pod creation against the pinned network volume is still manual/UI-backed in practice; experiment execution on an existing pod is now automated
 - keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance, with `10 GB` as the default dev target
 
 ## Next Step

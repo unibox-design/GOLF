@@ -102,6 +102,12 @@ To start a configured run on an already running pod:
 bash scripts/runpod/run_existing_pod.sh <pod-id> --env-file config/runpod.env
 ```
 
+To override the preset for that pod run:
+
+```bash
+bash scripts/runpod/run_existing_pod.sh <pod-id> --env-file config/runpod.env --run-preset kv2_dev
+```
+
 ## What the Pod Does
 
 The pod starts from the published Docker image and runs one shell command. That command:
@@ -236,6 +242,26 @@ The launcher will try those GPU types in order against the same pinned region an
   - `val_bpb: 1.61206716`
   - `val_loss: 2.72190787`
   - `total submission size int8+zlib: 9045206`
+
+### Recorded improvement
+
+- Existing-pod helper run on the same manual pod
+- Preset: `kv2_dev`
+- Change relative to baseline dev: `NUM_KV_HEADS=2` with compile disabled
+- Final exact result:
+  - `val_bpb: 1.60084048`
+  - `val_loss: 2.70295209`
+  - `total submission size int8+zlib: 9958297`
+- This beat the local `baseline_dev` reference by about `0.0112` bpb
+
+### Automation status
+
+- GitHub build automation works
+- Existing-pod experiment automation works
+- Direct CLI pod creation against the pinned `EU-RO-1` network volume is still unreliable
+- Practical workflow today:
+  - create the pod manually in Runpod UI
+  - run experiments through `scripts/runpod/run_existing_pod.sh`
 
 ### Cost and persistence tradeoff
 

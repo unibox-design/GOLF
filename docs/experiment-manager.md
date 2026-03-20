@@ -80,3 +80,18 @@ This keeps the workflow understandable for a beginner:
 4. summary compares runs
 
 That is enough to support disciplined experimentation before introducing a larger automation layer.
+
+## Current Local Reference Runs
+
+- `baseline_dev_manual_2026-03-20`
+  - completed on a manual Runpod pod with the pinned EU volume
+  - `val_bpb=1.61206716`
+
+- `kv2_failed_2026-03-20`
+  - useful negative result
+  - compile-enabled `kv2` failed on the RTX 4090 because of an Inductor/Triton resource error
+
+- `kv2_dev_2026-03-20`
+  - current best local dev run
+  - `val_bpb=1.60084048`
+  - confirms that `NUM_KV_HEADS=2` is better than the current `baseline_dev` on this setup when compile is disabled

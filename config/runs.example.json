@@ -67,6 +67,25 @@
       "train_gpt.py"
     ]
   },
+  "kv2_seq512_dev": {
+    "description": "kv2_dev plus shorter training sequence length for a faster dev-time comparison",
+    "env": {
+      "RUN_ID": "kv2_seq512_dev_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "NUM_KV_HEADS": "2",
+      "TRAIN_SEQ_LEN": "512",
+      "VAL_LOSS_EVERY": "200",
+      "TORCHDYNAMO_DISABLE": "1"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
   "mlx_smoke": {
     "description": "Apple Silicon smoke run with a short MLX training job",
     "env": {
