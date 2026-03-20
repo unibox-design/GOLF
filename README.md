@@ -33,6 +33,7 @@ The launcher works best when the scripts are copied into the same machine where 
 - `scripts/launch_run.sh`: launches a configured run and records metadata
 - `scripts/docker_launch.sh`: runs the launcher inside the trainer container
 - `scripts/runpod/create_pod.sh`: creates a Runpod pod from a published image
+- `scripts/runpod/run_existing_pod.sh`: starts a configured run on an already running pod
 - `scripts/runpod/render_startup_command.py`: renders the pod startup command
 - `scripts/runpod/bootstrap.sh`: bootstraps repo/deps/data on the pod itself
 - `scripts/runpod/ssh_command.sh`: prints the correct SSH command for a pod
@@ -110,6 +111,7 @@ That guide also records the practical lessons from the first real Runpod attempt
 - `TORCHDYNAMO_DISABLE=1` is useful on the `4090` dev pod because compiled Triton kernels failed there
 - the default `4090` path now uses the `baseline_dev` preset for that reason
 - if `4090` capacity is unavailable in the pinned region, let the launcher try a fallback candidate list under your cost cap
+- a completed manual-pod smoke run on March 20, 2026 reached `final_int8_zlib_roundtrip_exact val_bpb=1.61206716` with total compressed submission size `9045206`
 - keep GPU pods off when idle; for a fun experiment, a small persistent volume is the best cost/convenience balance, with `10 GB` as the default dev target
 
 ## Next Step

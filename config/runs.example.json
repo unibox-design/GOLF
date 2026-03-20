@@ -49,6 +49,24 @@
       "train_gpt.py"
     ]
   },
+  "kv2_dev": {
+    "description": "Dev variant of kv2 with torch.compile disabled for RTX 4090-style runs",
+    "env": {
+      "RUN_ID": "kv2_dev_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "NUM_KV_HEADS": "2",
+      "VAL_LOSS_EVERY": "200",
+      "TORCHDYNAMO_DISABLE": "1"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
   "mlx_smoke": {
     "description": "Apple Silicon smoke run with a short MLX training job",
     "env": {

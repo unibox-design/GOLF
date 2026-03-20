@@ -42,6 +42,7 @@ For most repositories, the default `GITHUB_TOKEN` is enough to push to GHCR when
 - `config/runpod.baseline-h100.env`
 - `config/runs.example.json`
 - `scripts/runpod/create_pod.sh`
+- `scripts/runpod/run_existing_pod.sh`
 - `scripts/runpod/render_startup_command.py`
 - `scripts/runpod/bootstrap.sh`
 - `scripts/runpod/ssh_command.sh`
@@ -93,6 +94,12 @@ To run a remote command through the resolved SSH path:
 
 ```bash
 bash scripts/runpod/remote_exec.sh <pod-id> -- cat /runpod/results/bootstrap.status
+```
+
+To start a configured run on an already running pod:
+
+```bash
+bash scripts/runpod/run_existing_pod.sh <pod-id> --env-file config/runpod.env
 ```
 
 ## What the Pod Does
@@ -219,6 +226,16 @@ The launcher will try those GPU types in order against the same pinned region an
 - Use `RTX 4090` for cheap smoke tests and pipeline validation.
 - Prefer disabling compile on dev GPUs.
 - Reserve the compiled path and more serious timing-sensitive tests for H100-class runs later.
+
+### Recorded smoke result
+
+- Manual pod on `EU-RO-1` volume `GOLF_VOL`
+- Stock image: `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04`
+- Torch upgraded during bootstrap to satisfy `enable_gqa`
+- Final exact result:
+  - `val_bpb: 1.61206716`
+  - `val_loss: 2.72190787`
+  - `total submission size int8+zlib: 9045206`
 
 ### Cost and persistence tradeoff
 

@@ -39,7 +39,9 @@ fi
 
 BASE_CMD="$CONNECT_OUTPUT -i $KEY_PATH"
 if [[ "$USE_RSA_FLAGS" -eq 1 ]]; then
-  BASE_CMD="ssh -o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa ${CONNECT_OUTPUT#ssh } -i $KEY_PATH"
+  BASE_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAcceptedAlgorithms=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa ${CONNECT_OUTPUT#ssh } -i $KEY_PATH"
+else
+  BASE_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${CONNECT_OUTPUT#ssh } -i $KEY_PATH"
 fi
 
 printf '%s\n' "$BASE_CMD"
