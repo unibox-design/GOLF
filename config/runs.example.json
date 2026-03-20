@@ -86,6 +86,27 @@
       "train_gpt.py"
     ]
   },
+  "kv2_low_lr_dev": {
+    "description": "kv2_dev plus lower learning rates based on the current public LowerLR direction",
+    "env": {
+      "RUN_ID": "kv2_low_lr_dev_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "NUM_KV_HEADS": "2",
+      "TIED_EMBED_LR": "0.03",
+      "MATRIX_LR": "0.02",
+      "SCALAR_LR": "0.02",
+      "VAL_LOSS_EVERY": "200",
+      "TORCHDYNAMO_DISABLE": "1"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
   "mlx_smoke": {
     "description": "Apple Silicon smoke run with a short MLX training job",
     "env": {
