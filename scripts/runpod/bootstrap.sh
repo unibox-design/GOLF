@@ -94,12 +94,15 @@ ensure_torch_compat() {
 
 python_has_core_deps() {
   python3 - <<'PY'
-import importlib
 import sys
 
 required = ["huggingface_hub", "datasets", "sentencepiece", "tqdm", "numpy"]
-missing = [name for name in required if importlib.util.find_spec(name) is None]
-sys.exit(0 if not missing else 1)
+for name in required:
+    try:
+        __import__(name)
+    except Exception:
+        sys.exit(1)
+sys.exit(0)
 PY
 }
 
