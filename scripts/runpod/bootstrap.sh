@@ -18,7 +18,7 @@ BOOTSTRAP_LOG="$RESULTS_DIR/bootstrap.log"
 STATUS_FILE="$RESULTS_DIR/bootstrap.status"
 RUN_LOG="$RESULTS_DIR/${RUN_PRESET}.log"
 CSV_PATH="$RESULTS_DIR/experiments.csv"
-DEPS_STAMP="$REPO_ROOT/.deps_installed"
+DEPS_STAMP="$VENV_ROOT/.parameter_golf_deps_installed"
 
 mkdir -p "$RESULTS_DIR"
 touch "$BOOTSTRAP_LOG"
@@ -92,6 +92,17 @@ ensure_torch_compat() {
   fi
 }
 
+python_has_core_deps() {
+  python3 - <<'PY'
+import importlib
+import sys
+
+required = ["huggingface_hub", "datasets", "sentencepiece", "tqdm", "numpy"]
+missing = [name for name in required if importlib.util.find_spec(name) is None]
+sys.exit(0 if not missing else 1)
+PY
+}
+
 ensure_venv
 
 if [[ ! -d "$REPO_ROOT/.git" ]]; then
@@ -102,7 +113,7 @@ else
   log "parameter-golf repo already present at $REPO_ROOT"
 fi
 
-if [[ ! -f "$DEPS_STAMP" ]]; then
+if [[ ! -f "$DEPS_STAMP" ]] || ! python_has_core_deps; then
   log "installing Python dependencies"
   python3 -m pip install --upgrade pip 2>&1 | tee -a "$BOOTSTRAP_LOG"
   ensure_torch_compat
