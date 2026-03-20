@@ -126,6 +126,26 @@
       "train_gpt.py"
     ]
   },
+  "kv2_10l_dev": {
+    "description": "kv2_dev plus one extra layer with slightly reduced width to test depth without blindly overspending bytes",
+    "env": {
+      "RUN_ID": "kv2_10l_dev_sp1024",
+      "DATA_PATH": "./data/datasets/fineweb10B_sp1024",
+      "TOKENIZER_PATH": "./data/tokenizers/fineweb_1024_bpe.model",
+      "VOCAB_SIZE": "1024",
+      "NUM_KV_HEADS": "2",
+      "NUM_LAYERS": "10",
+      "MODEL_DIM": "480",
+      "VAL_LOSS_EVERY": "200",
+      "TORCHDYNAMO_DISABLE": "1"
+    },
+    "command": [
+      "torchrun",
+      "--standalone",
+      "--nproc_per_node=1",
+      "train_gpt.py"
+    ]
+  },
   "mlx_smoke": {
     "description": "Apple Silicon smoke run with a short MLX training job",
     "env": {
