@@ -61,6 +61,15 @@ sys.exit(0 if "enable_gqa" in sig.parameters else 1)
 PY
 }
 
+ensure_torch_compat() {
+  if ! torch_has_enable_gqa; then
+    log "upgrading torch to a version with scaled_dot_product_attention(enable_gqa=...) support"
+    python3 -m pip install --upgrade "torch>=2.5" 2>&1 | tee -a "$BOOTSTRAP_LOG"
+  else
+    log "existing torch runtime already supports enable_gqa"
+  fi
+}
+
 if [[ ! -d "$REPO_ROOT/.git" ]]; then
   log "cloning parameter-golf into $REPO_ROOT"
   rm -rf "$REPO_ROOT"
@@ -72,16 +81,12 @@ fi
 if [[ ! -f "$DEPS_STAMP" ]]; then
   log "installing Python dependencies"
   python3 -m pip install --upgrade pip 2>&1 | tee -a "$BOOTSTRAP_LOG"
-  if ! torch_has_enable_gqa; then
-    log "upgrading torch to a version with scaled_dot_product_attention(enable_gqa=...) support"
-    python3 -m pip install --upgrade "torch>=2.5" 2>&1 | tee -a "$BOOTSTRAP_LOG"
-  else
-    log "existing torch runtime already supports enable_gqa"
-  fi
+  ensure_torch_compat
   pip install -r "$REPO_ROOT/requirements.txt" 2>&1 | tee -a "$BOOTSTRAP_LOG"
   date '+%Y-%m-%d %H:%M:%S' > "$DEPS_STAMP"
 else
   log "dependency install already completed"
+  ensure_torch_compat
 fi
 
 log "downloading cached FineWeb variant=$DATA_VARIANT train_shards=$TRAIN_SHARDS"
