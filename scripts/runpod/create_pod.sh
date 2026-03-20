@@ -16,6 +16,18 @@ Options:
 EOF
 }
 
+contains_exact() {
+  local needle="$1"
+  shift
+  local item
+  for item in "$@"; do
+    if [[ "$item" == "$needle" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 trim() {
   local value="$1"
   value="${value#"${value%%[![:space:]]*}"}"
@@ -159,6 +171,91 @@ build_cmd_array() {
 GPU_TYPES=()
 if [[ -n "${TEMPLATE_ID:-}" ]]; then
   GPU_TYPES+=("template")
+elif [[ "${AUTO_GPU_PICK:-0}" == "1" ]]; then
+  live_gpu_types=()
+  while IFS= read -r row; do
+    [[ -n "$row" ]] && live_gpu_types+=("$row")
+  done < <(
+    runpodctl get cloud | awk '
+      NR<=1 { next }
+      $0 ~ /^[[:space:]]*$/ { next }
+      $0 ~ /^SUPER[[:space:]]*$/ { next }
+      $0 ~ /^Generation[[:space:]]*$/ { next }
+      $0 ~ /^Blackwell/ { next }
+      $0 ~ /^Edition[[:space:]]*$/ { next }
+      {
+        line=$0
+        gsub(/\r/, "", line)
+        n=split(line, fields, /[[:space:]]{2,}/)
+        if (n < 5) next
+        gpu=fields[1]
+        mem=fields[2]+0
+        vcpu=fields[3]+0
+        spot=fields[4]
+        ondemand=fields[5]
+        if (spot == "Reserved" && ondemand == "Reserved") next
+        price = (ondemand == "Reserved" ? spot : ondemand)
+        if (price == "Reserved") next
+        printf "%s\t%d\t%d\t%.3f\n", gpu, mem, vcpu, price + 0
+      }
+    '
+  )
+
+  PREFERRED_GPU_ORDER=(
+    "1x NVIDIA GeForce RTX 4090"
+    "1x NVIDIA GeForce RTX 4080"
+    "1x NVIDIA A40"
+    "1x NVIDIA RTX A5000"
+    "1x NVIDIA RTX A6000"
+    "1x NVIDIA GeForce RTX 4070 Ti"
+    "1x NVIDIA RTX 5000 Ada"
+    "1x NVIDIA RTX 4000 Ada"
+    "1x NVIDIA L40S"
+    "1x NVIDIA GeForce RTX 3090 Ti"
+    "1x NVIDIA GeForce RTX 3090"
+    "1x NVIDIA A100 80GB PCIe"
+    "1x NVIDIA A100-SXM4-80GB"
+    "1x NVIDIA H100 PCIe"
+    "1x NVIDIA H100 80GB HBM3"
+    "1x NVIDIA H100 NVL"
+  )
+
+  live_gpu_names=()
+  for row in "${live_gpu_types[@]}"; do
+    gpu_name="${row%%$'\t'*}"
+    rest="${row#*$'\t'}"
+    mem_gb="${rest%%$'\t'*}"
+    rest="${rest#*$'\t'}"
+    vcpu_count="${rest%%$'\t'*}"
+    price="${rest#*$'\t'}"
+
+    if [[ -n "${MIN_MEM_GB:-}" ]] && (( mem_gb < MIN_MEM_GB )); then
+      continue
+    fi
+    if [[ -n "${MIN_VCPU:-}" ]] && (( vcpu_count < MIN_VCPU )); then
+      continue
+    fi
+    if [[ -n "${MAX_COST_PER_HOUR:-}" ]]; then
+      awk_check="$(awk -v p="$price" -v m="$MAX_COST_PER_HOUR" 'BEGIN { exit !(p <= m) }' && echo ok || true)"
+      if [[ "$awk_check" != "ok" ]]; then
+        continue
+      fi
+    fi
+
+    live_gpu_names+=("$gpu_name")
+  done
+
+  for preferred in "${PREFERRED_GPU_ORDER[@]}"; do
+    if contains_exact "$preferred" "${live_gpu_names[@]}"; then
+      GPU_TYPES+=("${preferred#1x }")
+    fi
+  done
+
+  for gpu_name in "${live_gpu_names[@]}"; do
+    if ! contains_exact "${gpu_name#1x }" "${GPU_TYPES[@]}"; then
+      GPU_TYPES+=("${gpu_name#1x }")
+    fi
+  done
 elif [[ -n "${GPU_CANDIDATES:-}" ]]; then
   IFS=';' read -r -a raw_gpu_types <<< "$GPU_CANDIDATES"
   for raw_gpu_type in "${raw_gpu_types[@]}"; do
